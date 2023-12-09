@@ -1,0 +1,84 @@
+name:        "Couchbase Acorn"
+description: "Acorn providing Couchbase database"
+readme:      "./README.md"
+info:        localData.info
+icon:        "./icon.png"
+
+args: {
+	// Couchbase version
+	version: "7.2.3"
+
+	// Couchbase admin user
+	dbUser: ""
+
+	// Couchbase cluster name
+	clusterName: "mycluster"
+
+	// Couchbase bucket name
+	bucketName: "mybucket"
+}
+
+services: db: {
+	generated: job: "setup"
+	default: true
+}
+
+containers: {
+	couchbase: {
+		name:        "Couchbase Server"
+		description: "Container running a Couchbase server"
+		image:       "couchbase:\(args.version)"
+		ports: {
+			expose: "8091/http",
+		}
+	}
+}
+
+jobs: setup: {
+	name:  "configure Couchbase server"
+	image: "couchbase:\(args.version)"
+	dirs: "/acorn/scripts/": "./scripts"
+	dependsOn: ["couchbase"]
+	entrypoint: ["/acorn/scripts/init.sh"]
+	env: {
+		CB_CLUSTER_NAME: args.clusterName
+		CB_BUCKET_NAME:  args.bucketName
+		CB_ADMIN_USER:   "secret://admin/username"
+		CB_ADMIN_PASS:   "secret://admin/password"
+	}
+}
+
+secrets: {
+	admin: {
+		name: "credentials of the admin user"
+		type: "basic"
+		params: {
+			usernameLength:     8
+			usernameCharacters: "a-z0-9"
+			passwordLength:     10
+			passwordCharacters: "A-Za-z0-9"
+		}
+		data: {
+			username: std.ifelse(args.dbUser != "", args.dbUser, "")
+			password: ""
+		}
+	}
+}
+
+localData: info: """
+	## Usage
+
+	services: db: {
+		image: "ghcr.io/lucj/acorn-couchbase:v#.#.#-#"
+	}
+
+	containers: app: {
+		image: "app-image"
+		env: {
+		  CB_HOST:       "@{@{service.}db.address}"
+		  CB_BUCKET:     "@{@{service.}db.data.bucketName}"
+		  CB_ADMIN_USER: "@{@{service.}db.secrets.admin.username}"
+		  CB_ADMIN_PASS: "@{@{service.}db.secrets.admin.password}"
+		}
+	}
+	"""
