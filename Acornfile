@@ -19,6 +19,7 @@ args: {
 }
 
 services: db: {
+	default: true
 	generated: job: "setup"
 }
 
