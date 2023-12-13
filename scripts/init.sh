@@ -1,6 +1,13 @@
 #!/bin/sh
 # set -euxo pipefail
 
+# Make sure this script is only triggered on Acorn creation events
+echo "event: ${ACORN_EVENT}"
+if [ "${ACORN_EVENT}" = "delete" ]; then
+   echo "ACORN_EVENT must be [create, update], currently is [${ACORN_EVENT}]"
+   exit 0
+fi
+
 # Couple of variables to make local testing simpler
 termination_log="/dev/termination-log"
 acorn_output="/run/secrets/output"
@@ -26,52 +33,59 @@ done
 
 # Additional delay for server initialization
 echo "Couchbase Server is up, waiting for initialization..."
-sleep 20
+sleep 10
 
-# Initialize the node and cluster
-res=$(couchbase-cli cluster-init \
-    --cluster $CB_HOST:$CB_PORT \
-    --cluster-username $CB_ADMIN_USER \
-    --cluster-password $CB_ADMIN_PASS \
-    --cluster-name $CB_CLUSTER_NAME \
-    --cluster-ramsize $CB_RAMSIZE \
-    --services $CB_SERVICES 2>&1)
+couchbase-cli server-list -c $CB_HOST:$CB_PORT -u $CB_ADMIN_USER -p $CB_ADMIN_PASS >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "Cluster is already initialized."
+else
+    # Initialize the node and cluster
+    res=$(couchbase-cli cluster-init \
+        --cluster $CB_HOST:$CB_PORT \
+        --cluster-username $CB_ADMIN_USER \
+        --cluster-password $CB_ADMIN_PASS \
+        --cluster-name $CB_CLUSTER_NAME \
+        --cluster-ramsize $CB_RAMSIZE \
+        --services $CB_SERVICES 2>&1)
 
-if [ $? -ne 0 ]; then
-    echo "cluster init failed"
-    echo $res | tee ${termination_log}
-    exit 1
+    if [ $? -ne 0 ]; then
+        echo "cluster init failed"
+        echo $res | tee ${termination_log}
+        exit 1
+    fi
+
+    echo "Couchbase Server has been initialized and configured!"
 fi
 
-echo "Couchbase Server has been initialized and configured!"
+couchbase-cli bucket-list -c $CB_HOST:$CB_PORT -u $CB_ADMIN_USER -p $CB_ADMIN_PASS | grep -q "$CB_BUCKET_NAME" 2>&1
+if [ $? -eq 0 ];then 
+    echo "Bucket $BUCKET_NAME exists."
+else
+    res=$(couchbase-cli bucket-create \
+        --cluster $CB_HOST:$CB_PORT \
+        --username $CB_ADMIN_USER \
+        --password $CB_ADMIN_PASS \
+        --bucket $CB_BUCKET_NAME \
+        --bucket-type $CB_BUCKET_TYPE \
+        --bucket-ramsize $CB_BUCKET_RAMSIZE \
+        --bucket-replica $CB_BUCKET_REPLICA)
 
-# Create a bucket
-res=$(couchbase-cli bucket-create \
-    --cluster $CB_HOST:$CB_PORT \
-    --username $CB_ADMIN_USER \
-    --password $CB_ADMIN_PASS \
-    --bucket $CB_BUCKET_NAME \
-    --bucket-type $CB_BUCKET_TYPE \
-    --bucket-ramsize $CB_BUCKET_RAMSIZE \
-    --bucket-replica $CB_BUCKET_REPLICA)
+    if [ $? -ne 0 ]; then
+        echo "bucket creation failed"
+        echo $res | tee ${termination_log}
+        exit 1
+    fi
 
-if [ $? -ne 0 ]; then
-    echo "bucket creation failed"
-    echo $res | tee ${termination_log}
-    exit 1
+    echo "Bucket $CB_BUCKET_NAME has been created."
 fi
-
-echo "Bucket $CB_BUCKET_NAME has been created."
 
 # Define service
-cat > /run/secrets/output<<EOF
+cat > $acorn_output<<EOF
 services: db: {
-    container: "couchbase"
     default: true
+    container: "couchbase"
     secrets: ["admin"]
-    ports: [
-		"8091",
-	]
+    ports: "8091"
     data: {
         bucketName: "${CB_BUCKET_NAME}"
     }

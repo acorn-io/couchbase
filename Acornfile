@@ -20,17 +20,23 @@ args: {
 
 services: db: {
 	generated: job: "setup"
-	default: true
 }
 
 containers: {
 	couchbase: {
-		name:        "Couchbase Server"
 		description: "Container running a Couchbase server"
 		image:       "couchbase:\(args.version)"
-		ports: {
-			expose: "8091/http",
-		}
+		ports: [
+		  "8091/http",
+		]
+		probes: [
+			{
+				type: "readiness"
+				tcp: {
+						url: "tcp://localhost:8091"
+				}
+			},
+    ]
 	}
 }
 
@@ -46,6 +52,7 @@ jobs: setup: {
 		CB_ADMIN_USER:   "secret://admin/username"
 		CB_ADMIN_PASS:   "secret://admin/password"
 	}
+	events: ["create", "update"]
 }
 
 secrets: {
