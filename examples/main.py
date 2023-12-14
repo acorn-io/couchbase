@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
-#from couchbase.subdoc import MutateInSpec
+import couchbase.subdocument as SD
 import os
 
 # Configuration
@@ -34,8 +34,6 @@ cluster.wait_until_ready(timedelta(seconds=5))
 cb = cluster.bucket(CB_BUCKET)
 cb_coll = cb.default_collection()
 
-print(cb_coll)
-
 def setup_database():
     try:
         # Initialize the counter if it doesn't exist
@@ -53,8 +51,9 @@ async def startup_event():
 async def read_root(request: Request):
     try:
         # Increment the counter and retrieve its value
-        result = cb_coll.mutate_in('hits', 
-            [ ("counter", "count_value", 1, MutateInSpec.increment()) ])
+        result = cb_coll.mutate_in( "hits",
+            [ SD.increment( "count", 1)])
+        
         count = result.content_as[int](0)
     except Exception as e:
         print(f"Error: {e}")

@@ -85,7 +85,7 @@ services: db: {
     default: true
     container: "couchbase"
     secrets: ["admin"]
-    ports: "8091"
+    ports: ["8091", "8092", "11210"]
     data: {
         bucketName: "${CB_BUCKET_NAME}"
     }

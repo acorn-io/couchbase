@@ -9,17 +9,19 @@ services: db: {
 	}
 }
 
-containers: app: {
-	build: {
-		context: "."
-		target:  "dev"
-	}
-	consumes: ["db"]
-	ports: publish: "8000/http"
-	env: {
-		CB_HOST:     "@{service.db.address}"
-		CB_BUCKET:   "@{service.db.data.bucketName}"
-		CB_USERNAME: "@{service.db.secrets.admin.username}"
-		CB_PASSWORD: "@{service.db.secrets.admin.password}"
+containers: {
+	app: {
+		build: {
+			context: "."
+			target:  "dev"
+		}
+		consumes: ["db"]
+		ports: publish: "8000/http"
+		env: {
+			CB_HOST:     "@{service.db.address}"
+			CB_BUCKET:   "@{service.db.data.bucketName}"
+			CB_USERNAME: "@{service.db.secrets.admin.username}"
+			CB_PASSWORD: "@{service.db.secrets.admin.password}"
+		}
 	}
 }
