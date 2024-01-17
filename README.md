@@ -9,7 +9,6 @@ This Acorn provides a Couchbase database as an Acorn Service. It can be used to 
 The Acorn image of this service is hosted in GitHub container registry at [ghcr.io/acorn-io/couchbase](ghcr.io/acorn-io/couchbase). 
 
 Currently this Acorn has the following configuration options:
-- *version*: version of the database (*7.2.3* by default)
 - *dbUser*: name of the admin user (empty by default)
 - *clusterName*: name of the Couchbase cluster to create
 - *bucketName*: name of the bucket to create inside the cluster
