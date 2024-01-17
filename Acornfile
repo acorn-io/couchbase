@@ -5,9 +5,6 @@ info:        localData.info
 icon:        "./icon.png"
 
 args: {
-	// Couchbase version
-	version: "7.2.3"
-
 	// Couchbase admin user
 	dbUser: ""
 
@@ -25,7 +22,7 @@ services: db: {
 
 containers: couchbase: {
 	description: "Container running a Couchbase server"
-	image:       "couchbase:\(args.version)"
+	image:       "couchbase:7.2.3"
 	dirs: "/opt/couchbase/var/lib/couchbase": "volume://db"
 	ports: [
 		"8091/http",
@@ -44,7 +41,7 @@ containers: couchbase: {
 
 jobs: setup: {
 	name:  "configure Couchbase server"
-	image: "couchbase:\(args.version)"
+	image: "couchbase:7.2.3"
 	dirs: "/acorn/scripts/": "./scripts"
 	dependsOn: ["couchbase"]
 	entrypoint: ["/acorn/scripts/init.sh"]
