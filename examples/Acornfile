@@ -5,7 +5,7 @@ services: db: {
 			acornfile: "../Acornfile"
 		}
 	} else {
-		image: "ghcr.io/lucj/acorn-couchbase:v#.#.#-#"
+		image: "ghcr.io/acorn-io/couchbase:v#.#.#-#"
 	}
 }
 

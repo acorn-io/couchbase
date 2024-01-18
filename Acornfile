@@ -55,7 +55,7 @@ jobs: setup: {
 }
 
 volumes: {
-	"db": {}
+	db: {}
 }
 
 secrets: {
@@ -79,7 +79,7 @@ localData: info: """
 	## Usage
 
 	services: db: {
-		image: "ghcr.io/lucj/acorn-couchbase:v#.#.#-#"
+		image: "ghcr.io/acorn-io/couchbase:v#.#.#-#"
 	}
 
 	containers: app: {
